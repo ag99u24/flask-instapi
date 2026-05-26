@@ -2,7 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import String, Boolean,Integer,ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import List
-
+ 
 db = SQLAlchemy()
 
 class User(db.Model):
@@ -38,6 +38,7 @@ class Post(db.Model):
     content: Mapped[str] = mapped_column(String(1000))
     user: Mapped["User"] = relationship("User", back_populates="posts") 
     medias: Mapped[List["Media"]] = relationship("Media", back_populates="post")
+    comments: Mapped[List["Comment"]] = relationship("Comment", back_populates="post")
 
     def serialize(self):
         return {
@@ -70,8 +71,7 @@ class Comment(db.Model):
     text: Mapped[str] = mapped_column(String(1000), nullable=False)
     user: Mapped["User"] = relationship("User", back_populates="comments")
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False)
-    post_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False) 
-    
+    post_id: Mapped[int] = mapped_column(Integer, ForeignKey('posts.id'), nullable=False) 
 
 
     def serialize(self):
@@ -79,7 +79,7 @@ class Comment(db.Model):
             "id" : self.id,
             "text" : self.text,
             "user_id" : self.user_id,
-            
+            "post_id" : self.post_id,
         }
     
 class Follower(db.Model):
@@ -87,5 +87,12 @@ class Follower(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     follower_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False)
     following_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False)
-    follower_user: Mapped["User"]= relationship("User", back_populates= "follower_user", foreign_keys=[follower_id])
-    following_user: Mapped["User"]=relationship("User", back_populates= "following_user", foreign_keys=[following_id])
+    follower_user: Mapped["User"]= relationship("User", back_populates= "followers", foreign_keys=[follower_id])
+    following_user: Mapped["User"]=relationship("User", back_populates= "follows", foreign_keys=[following_id])
+
+    def serialize(self):
+        return {
+            "id" : self.id,
+            "follower_user" : self.follower_id,
+            "following_user" : self.following_id,
+        }
